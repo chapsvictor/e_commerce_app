@@ -14,14 +14,6 @@ def id_generator(instance):
     ModelClass = instance.__class__
 
     try:
-        if ModelClass.objects.filter(fulfillment_id=model_name_field_id).exists():
-            return id_generator(instance)
-        else:
-            return model_name_field_id
-    except FieldError:
-        pass
-
-    try:
         if ModelClass.objects.filter(order_id=model_name_field_id).exists():
             return id_generator(instance)
         else:
@@ -31,6 +23,13 @@ def id_generator(instance):
 
     try:
         if ModelClass.objects.filter(product_id=model_name_field_id).exists():
+            return id_generator(instance)
+        else:
+            return model_name_field_id
+    except FieldError:
+        pass
+    try:
+        if ModelClass.objects.filter(coupon_id=model_name_field_id).exists():
             return id_generator(instance)
         else:
             return model_name_field_id

@@ -11,7 +11,7 @@ class Coupon(models.Model):
             ('category', 'Category'), ('product', 'Product'), ('all', 'All')]
 
     VALUE_TYPE = [
-            ('Percentage', 'percentage'), ('cash', 'Cash')]
+            ('percentage', 'Percentage'), ('cash', 'Cash')]
 
 
     coupon_owner =models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='coupon_user', blank=False, null=False) 
@@ -25,9 +25,18 @@ class Coupon(models.Model):
 
 
 
-    def __str__(self):
-        return '%s '%' of  %s  coupon'%(self.rate, self.coupon_type)
 
+    def __str__(self):
+        if self.value_type == 'percentage':
+            symbol='%'
+        else:
+            symbol='$'  
+        if self.coupon_type == 'category':  
+            return f'{self.rate}  {symbol} {self.coupon_category} coupon'
+        elif self.coupon_type == 'product':  
+            return f'{self.rate}  {symbol} {self.coupon_product} coupon'
+        else:
+            return f'{self.rate}  {symbol} General coupon'
 
 
     def save(self, *args, **kwargs):
@@ -45,10 +54,11 @@ class Coupon(models.Model):
             if self.coupon_product is None:
                 raise ValueError('product field must be set')
         if str(self.value_type) == 'percentage' and int(self.rate) > 100:
-            raise ValueError("100'%' is the maximum percentage rate")
+            symbol='%'
+            raise ValueError(f"100{symbol} is the maximum percentage rate")
 
         if self.coupon_id:
             super().save(*args, **kwargs)
         else:
-            self.coupon_id = 'COUP%s'%(id_generator(instance=self))
+            self.coupon_id = 'COUP-%s'%(id_generator(instance=self))
             super().save(*args, **kwargs)

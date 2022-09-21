@@ -16,8 +16,8 @@ class CartDetail(APIView):
     """
 
 
-    queryset = OrderItem.objects.all()
-    serializer_class = OrderItemSerializer
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
@@ -68,30 +68,32 @@ def add_to_cart(request, product_id):
            
 
             #the store owner acceptance or denial of order should come here
-            # order_item = OrderItem.objects.filter(product=product)
+            
             order_item, created=OrderItem.objects.get_or_create(product=product, ordered_by_user=request.user, ordered_status=False)
             
-            order_qs= Cart.objects.filter(user=request.user, cart_checked_out=False)
+            cart_qs= Cart.objects.filter(user=request.user, cart_checked_out=False)
             
-            if order_qs.exists():
-                order = order_qs[0]
+            if cart_qs.exists():
+                cart = cart_qs.first()
                 
                 #checks if the product already exists in the cart
-                if order.orders.filter(product__id=product.id).exists():
+                if cart.orders.filter(product__id=product.id).exists():
                     
                     order_item.quantity += 1
+                    cart.save()
                     order_item.save()
                 else:
                     #since product isn't in the cart yet, add it to it 
                     
-                    order.orders.add(order_item)
+                    cart.orders.add(order_item)
+                    cart.save()
                     order_item.save()
             else:
                 
                 ordered_date = timezone.now()
                 
-                order = Cart.objects.create(user = request.user, ordered_date = ordered_date)
-                order.orders.add(order_item)
+                cart = Cart.objects.create(user = request.user, ordered_date = ordered_date)
+                cart.orders.add(order_item)
             return Response("product %s succesfully added to cart"%(product.product_id))
         
         else:
