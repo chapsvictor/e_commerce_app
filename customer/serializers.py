@@ -7,8 +7,8 @@ from .models import Cart, OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product= ProductsSerializer(read_only=True, many=True)
-    ordered_by_user = UserDetailSerializer(read_only=True, many=True)
+    product= ProductsSerializer(read_only=True)
+    ordered_by_user = UserDetailSerializer(read_only=True)
     class Meta:
         model=OrderItem
         fields = ['order_id', 'product','approval_status', 'ordered_status', 'quantity', 'ordered_by_user']
@@ -17,8 +17,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    user = UserDetailSerializer(read_only=True, many=True)
-    orders = OrderItemSerializer(read_only=True, many=True)
+    user = UserDetailSerializer(read_only=True)
+    orders = OrderItemSerializer(read_only=True)
 
     class Meta:
         model=Cart

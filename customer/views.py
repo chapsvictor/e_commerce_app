@@ -8,34 +8,53 @@ from rest_framework import status,generics, permissions
 from products.models import Product
 from .models import OrderItem
 from .serializers import CartSerializer, OrderItemSerializer
+from rest_framework import viewsets
 
 
-class CartDetail(APIView):
+
+
+class CartDetail(viewsets.ModelViewSet):
     """
-    This endpoint is to view the details of a cart
+    Details of an Cart
     """
-
-
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
-
-    def get(self, request):
+    def get_queryset(self):
         try:
-            cart = Cart.objects.get(user=self.request.user)
+            cart = self.queryset.filter(user=self.request.user)
         except Cart.DoesNotExist:
             cart = Cart.objects.create(user=self.request.user)
+        return cart
+
+
+# class CartDetail(APIView):
+#     """
+#     This endpoint is to view the details of a cart
+#     """
+
+
+#     queryset = Cart.objects.all()
+#     serializer_class = CartSerializer
+#     permission_classes = (permissions.IsAuthenticated,)
+
+
+#     def get(self, request):
+#         try:
+#             cart = Cart.objects.get(user=self.request.user)
+#         except Cart.DoesNotExist:
+#             cart = Cart.objects.create(user=self.request.user)
             
-        return Response(data={'cart_id':cart.id, 
-                                'user': cart.user,
-                                'cart_checked_out': cart.cart_checked_out,
-                                'orders':cart.orders,
-                                'start_date': cart.start_date, 
-                                'updated_date': cart.updated_date}, status=status.HTTP_200_OK)
+#         return Response(data={'cart_id':cart.id, 
+#                                 'user': cart.user,
+#                                 'cart_checked_out': cart.cart_checked_out,
+#                                 'orders':cart.orders,
+#                                 'start_date': cart.start_date, 
+#                                 'updated_date': cart.updated_date}, status=status.HTTP_200_OK)
 
 
-class OrderItemDetail(generics.RetrieveAPIView):
+class OrderItemDetail(viewsets.ModelViewSet):
     """
     Details of an Users Order_items by
     """

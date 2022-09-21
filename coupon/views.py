@@ -3,7 +3,7 @@ from customer.models import OrderItem, Cart
 from rest_framework.response import Response
 from rest_framework import status,generics, permissions
 from rest_framework.decorators import api_view
-from rest_framework.viewsets import ViewSet
+from rest_framework import viewsets
 from .serializers import CouponSerializer
 
 
@@ -106,7 +106,7 @@ def use_coupon(request, coupon_id, order_id):
         
   
 
-class CouponDetail(ViewSet.ModelViewSet):
+class CouponDetailViewSet(viewsets.ModelViewSet):
     """
     Details of an Coupon
     """
