@@ -6,6 +6,10 @@ from django.utils import timezone
 
 class UserManager(BaseUserManager):
 
+     #######################
+    # Custom User Manager #
+    #######################
+
     def _create_user(self, username, email, password, is_active, is_staff, is_superuser, **extra_fields):
         if not username:
             raise ValueError('a username is required')
@@ -61,3 +65,4 @@ class User(PermissionsMixin, AbstractBaseUser):
     # for checking permission . all admin have all permissions
     def has_permission(self, perm, obj=None):
         return self.is_admin
+        
