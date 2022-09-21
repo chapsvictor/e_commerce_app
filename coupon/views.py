@@ -9,6 +9,10 @@ from .serializers import CouponSerializer
 
 
 def discount_calculator(coupon_id):
+
+    """
+    coupon discount calculator
+    """
     coupon=Coupon.objects.get(coupon_id=coupon_id)
     discount=0
     if coupon.value_type == 'percentage':
@@ -24,6 +28,10 @@ def discount_calculator(coupon_id):
 
 @api_view(['POST'])
 def use_coupon(request, coupon_id, order_id):
+
+    """
+    User activates a coupon
+    """
     coupon=Coupon.objects.get(coupon_id=coupon_id)
     print(coupon)
 
@@ -105,8 +113,8 @@ def use_coupon(request, coupon_id, order_id):
         return Response(f'coupon {coupon_id} deosn\'t exist')
         
   
-
 class CouponDetailViewSet(viewsets.ModelViewSet):
+
     """
     Details of an Coupon
     """
@@ -117,3 +125,4 @@ class CouponDetailViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         coupon = self.queryset.filter(coupon_owner=self.request.user)
         return coupon
+        

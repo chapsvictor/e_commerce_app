@@ -1,7 +1,7 @@
-from .views import use_coupon
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import CouponDetailViewSet
+from .views import use_coupon
 
 
 router=DefaultRouter()
@@ -15,5 +15,3 @@ urlpatterns = [
     path('use_coupon/<order_id>/<coupon_id>/',use_coupon, name='use_coupon'),
     path('',include(router.urls)),
 ]
-
-

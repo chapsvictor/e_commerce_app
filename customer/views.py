@@ -1,16 +1,14 @@
 from customer.models import OrderItem, Cart
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
-from rest_framework import status,generics, permissions
+from rest_framework import permissions
 from products.models import Product
 from .models import OrderItem
 from .serializers import CartSerializer, OrderItemSerializer
-from rest_framework import viewsets
-
-
 
 
 class CartDetail(viewsets.ModelViewSet):
@@ -29,31 +27,6 @@ class CartDetail(viewsets.ModelViewSet):
         return cart
 
 
-# class CartDetail(APIView):
-#     """
-#     This endpoint is to view the details of a cart
-#     """
-
-
-#     queryset = Cart.objects.all()
-#     serializer_class = CartSerializer
-#     permission_classes = (permissions.IsAuthenticated,)
-
-
-#     def get(self, request):
-#         try:
-#             cart = Cart.objects.get(user=self.request.user)
-#         except Cart.DoesNotExist:
-#             cart = Cart.objects.create(user=self.request.user)
-            
-#         return Response(data={'cart_id':cart.id, 
-#                                 'user': cart.user,
-#                                 'cart_checked_out': cart.cart_checked_out,
-#                                 'orders':cart.orders,
-#                                 'start_date': cart.start_date, 
-#                                 'updated_date': cart.updated_date}, status=status.HTTP_200_OK)
-
-
 class OrderItemDetail(viewsets.ModelViewSet):
     """
     Details of an Users Order_items by
@@ -69,6 +42,10 @@ class OrderItemDetail(viewsets.ModelViewSet):
 
 def product_still_instock(product):
 
+    """
+    Check if product is still in stock
+    """
+
     if product.product_in_stock_count >=1:
         return True
     else:
@@ -77,6 +54,10 @@ def product_still_instock(product):
 
 @api_view(['POST'])
 def add_to_cart(request, product_id):
+
+    """
+    Add an item to user cart/orderitem
+    """
 
     if request.method == 'POST':
         
@@ -123,15 +104,12 @@ def add_to_cart(request, product_id):
 
 
 
-
-
-
-""""
-at checkout of the order has been approved for purchase it is gottten and removed from the cart .
-"""
 @api_view(['POST'])
 def check_out_cart(request):
-    print("e enter here")
+
+    """"
+    Checkout  orderif it has been approved for then remove from the cart .
+    """
     if request.method == 'POST':
         user_cart = Cart.objects.filter(user=request.user.id).first()
         
@@ -160,12 +138,15 @@ def check_out_cart(request):
     
     else:
         return Response('only post method is allowed')
-    
+
+
 
 @api_view(['POST'])
 def approve_order(request, order_id):
     
-
+    """
+    Approve order by the product owner
+    """
     if request.method == 'POST':
 
         order_qs = OrderItem.objects.filter(order_id=order_id)        
@@ -197,6 +178,10 @@ def approve_order(request, order_id):
 
 @api_view(['POST'])
 def decline_order(request, order_id):
+
+    """
+    Decline order by the product owner
+    """
 
     if request.method == 'POST':
         order_qs = OrderItem.objects.filter(order_id=order_id)
@@ -237,6 +222,11 @@ def decline_order(request, order_id):
 
 @api_view(['POST'])
 def quatity_manipulator(request, *args, **kwargs):
+
+    """
+    change order quantity
+    """
+
     if request.method == 'POST': 
         params=kwargs
     
@@ -254,6 +244,11 @@ def quatity_manipulator(request, *args, **kwargs):
 
 @api_view(['POST'])
 def clear_cart(request):
+
+    """
+    clear all cart items at once
+    """
+
     user_orderitem=OrderItem.objects.filter(ordered_by_user=request.user).all()
     print(user_orderitem)
     user_orderitem.delete()
@@ -263,8 +258,14 @@ def clear_cart(request):
 
 
 @api_view(['POST'])
-def remove_order(request, order_id): 
+def remove_order(request, order_id):
+
+    """
+    Remove a particular order but only by the product owner
+    """ 
+
     user_orderitem = get_object_or_404(OrderItem, order_id=order_id)         
     user_orderitem.delete()
+
     return Response(f"order {user_orderitem.order_id} successfully removed")
     

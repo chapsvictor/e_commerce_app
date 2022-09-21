@@ -4,10 +4,14 @@ from django.conf import settings
 from e_commerce.generator import id_generator
 from products.models import Product
 from products.models import Product
-from coupon.models import Coupon
+
 
 
 class OrderItem(models.Model):
+
+    """
+    Order model for products that are being ordered at a particular time
+    """
     STATUS = [
             ('pending', 'Pending Confirmation'), ('approved', 'Approved'), ('declined', 'Declined'), ('customer_cancelled','Customer Cancelled') ]
 
@@ -48,11 +52,11 @@ class OrderItem(models.Model):
         return ", ".join([item.product.name for item in self.cart_items.all()])
 
     
-
-
-
-
 class Cart(models.Model):    
+
+    """
+    Individaul user cart model
+    """
     user=models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_cart') 
     cart_checked_out= models.BooleanField(verbose_name=_('checked_out') , default=False)
     
@@ -77,4 +81,3 @@ class Cart(models.Model):
         for order in self.orders.all():
             self.Total_payment_price += float(order.payment_price)
         super().save(*args, **kwargs)
-

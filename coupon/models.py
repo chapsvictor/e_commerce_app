@@ -7,6 +7,10 @@ from products.models import Product, Category
 
 class Coupon(models.Model):
 
+    """
+    Coupon model for order discount
+    """
+
     COUPON_TYPE = [
             ('category', 'Category'), ('product', 'Product'), ('all', 'All')]
 

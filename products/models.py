@@ -1,11 +1,17 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from e_commerce.generator import id_generator
 from django.utils.translation import gettext as _
+from e_commerce.generator import id_generator
+
 
 User=get_user_model()
 
 class  Category(models.Model):
+
+    """
+    Category model to allow all products take a single category at a time
+    """
+
     name=models.CharField(max_length=200, blank=False, unique=True)
 
 
@@ -25,6 +31,13 @@ class  Category(models.Model):
 
 
 class Product(models.Model):
+
+
+    """
+    Product model for all items 
+    """
+
+
     name=models.CharField(max_length=200, blank=False)
     description=models.TextField(max_length=200, blank=False)
     price=models.IntegerField()
@@ -43,8 +56,6 @@ class Product(models.Model):
             self.product_id = '%s_%s'%(self.name,id_generator(instance=self))
             
         super().save(*args, **kwargs)
-
-
 
 
     @staticmethod
@@ -76,12 +87,11 @@ class Product(models.Model):
             else:
                 return ''
 
-
-
     class Meta:
         verbose_name = 'product'
         verbose_name_plural = 'products'
         ordering=['-date_created']
+
 
 
     def __str__(self):

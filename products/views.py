@@ -1,10 +1,8 @@
-from django.shortcuts import render
-from .models import Category, Product
-from rest_framework.response import Response
-from .serializers import CategorySerializer, ProductsSerializer
-from rest_framework import viewsets
 from django.contrib.auth import get_user_model
-
+from rest_framework import viewsets
+from rest_framework.response import Response
+from .models import Category, Product
+from .serializers import CategorySerializer, ProductsSerializer
 
 
 User=get_user_model()
@@ -31,7 +29,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
             qs.delete()
             return Response('Category was successfully deleted')
         return Response('only admin can delete Category')
-
 
 
 
@@ -72,6 +69,10 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
     def destroy(self, request, *args, **kwargs):
+
+        """
+        Overide destroy method to allow only staffs delete products
+        """
 
         if request.user.is_staff:
             qs = self.get_object()

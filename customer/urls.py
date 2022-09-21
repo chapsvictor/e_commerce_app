@@ -1,9 +1,20 @@
 from django.contrib import admin
 from django.urls import path, include
-from .views import add_to_cart, approve_order, decline_order, check_out_cart, quatity_manipulator, clear_cart, remove_order, CartDetail,OrderItemDetail
 from rest_framework.routers import DefaultRouter
+from .views import (add_to_cart, 
+                    approve_order,
+                    CartDetail, 
+                    check_out_cart,
+                    clear_cart,
+                    decline_order, 
+                    OrderItemDetail,
+                    quatity_manipulator, 
+                    remove_order, 
+)
+
 
 app_name= 'customer'
+
 
 
 router=DefaultRouter()
