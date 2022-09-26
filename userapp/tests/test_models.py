@@ -52,10 +52,9 @@ class SuperUserTestCase(unittest.TestCase):
         contact="0903249609"
         password='12345'
 
-        User.objects.create_superuser(email=email, username=username, first_name=first_name, address=address, contact=contact, password = password)
+        test_super_user=User.objects.create_superuser(email=email, username=username, first_name=first_name, address=address, contact=contact, password = password)
 
-        test_super_user = User.objects.filter(email='supertestemail@yahoo.com').first()
-
+    
         self.assertTrue(test_super_user)
         self.assertEquals(test_super_user.first_name,'supertestfirstname' )
         self.assertEquals(test_super_user.email, 'supertestemail@yahoo.com')
@@ -67,15 +66,6 @@ class SuperUserTestCase(unittest.TestCase):
         self.assertTrue(test_super_user.is_superuser)
 
         test_super_user.delete()
-
-
-
-
-
-
-
-
-
 
 
 

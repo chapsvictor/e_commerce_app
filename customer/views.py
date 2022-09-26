@@ -1,107 +1,112 @@
+from django.contrib import messages
 from customer.models import OrderItem, Cart
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
 from products.models import Product
 from .models import OrderItem
 from .serializers import CartSerializer, OrderItemSerializer
+from rest_framework.permissions import SAFE_METHODS, BasePermission,IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 
 
-class CartDetail(viewsets.ModelViewSet):
+class OrderDetailPermissions(BasePermission):
+
+    message = 'You are only allowed access to your personal order items' 
+
+    def has_object_permission(self, request, view, obj):
+        
+        return obj.ordered_by_user == request.user
+
+
+
+class CartDetialPermissions(BasePermission):
+
+    message = 'You are only allowed access to your personal cart' 
+
+    def has_object_permission(self, request, view, obj):
+        
+        return obj.user == request.user
+
+class CartDetail(viewsets.ModelViewSet, CartDetialPermissions):
     """
     Details of an Cart
     """
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        try:
-            cart = self.queryset.filter(user=self.request.user)
-        except Cart.DoesNotExist:
-            cart = Cart.objects.create(user=self.request.user)
-        return cart
+    permission_classes = [CartDetialPermissions]
 
 
-class OrderItemDetail(viewsets.ModelViewSet):
+class OrderItemDetail(viewsets.ModelViewSet, OrderDetailPermissions ):
     """
     Details of an Users Order_items by
     """
+
+    permission_classes = [OrderDetailPermissions]
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
-    permission_classes = (permissions.IsAuthenticated,)
 
-    def get_queryset(self):
-        order_items = self.queryset.filter(ordered_by_user=self.request.user)
-        return order_items
+class ProductPermission(BasePermission):
 
+    message = 'You are only allowed to approve an order for your personal product' 
 
-def product_still_instock(product):
+    def has_object_permission(self, request, view, obj):
 
-    """
-    Check if product is still in stock
-    """
+        if request.methods in SAFE_METHODS:
+            return True 
 
-    if product.product_in_stock_count >=1:
-        return True
-    else:
-        return False
-   
+       
+        return obj.owner == request.user  
+
 
 @api_view(['POST'])
 def add_to_cart(request, product_id):
 
     """
     Add an item to user cart/orderitem
-    """
+    """       
+    product = get_object_or_404(Product, product_id=product_id)
 
-    if request.method == 'POST':
+    try:
+        assert product.product_still_instock() is True
         
-        product = get_object_or_404(Product, product_id=product_id)
-     
-        #check if product is still in stock
-        if product_still_instock(product) is True:
-           
-
-            #the store owner acceptance or denial of order should come here
-            
-            order_item, created=OrderItem.objects.get_or_create(product=product, ordered_by_user=request.user, ordered_status=False)
-            
-            cart_qs= Cart.objects.filter(user=request.user, cart_checked_out=False)
-            
-            if cart_qs.exists():
-                cart = cart_qs.first()
-                
-                #checks if the product already exists in the cart
-                if cart.orders.filter(product__id=product.id).exists():
-                    
-                    order_item.quantity += 1
-                    cart.save()
-                    order_item.save()
-                else:
-                    #since product isn't in the cart yet, add it to it 
-                    
-                    cart.orders.add(order_item)
-                    cart.save()
-                    order_item.save()
+        order_item, created=OrderItem.objects.get_or_create(product=product, 
+                                                            ordered_by_user=request.user, 
+                                                            ordered_status=False)
+        
+        cart= Cart.objects.filter(user=request.user, cart_checked_out=False).first()
+ 
+        if cart is not None:    
+            #checks if the product already exists in the cart
+            if cart.orders.filter(product__id=product.id,  ordered_by_user=request.user).first() is not None:
+                order_item.quantity += 1
+                order_item.save()
+                cart.total_update()
+                cart.save()  
             else:
-                
-                ordered_date = timezone.now()
-                
-                cart = Cart.objects.create(user = request.user, ordered_date = ordered_date)
+                #since product isn't in the cart yet, add it to it 
+                print("not yet in cart")
                 cart.orders.add(order_item)
-            return Response("product %s succesfully added to cart"%(product.product_id))
-        
+                cart.total_update()
+
+                cart.save()                          
         else:
-            return Response('%s  is out of stock'%(product.product_id))
+            
+            start_date = timezone.now()
+            
+            cart = Cart(user=request.user, start_date=start_date)
+            cart.save()
+            cart.orders.add(order_item)
+            cart.total_update()
+            cart.save()  
+        return Response("product %s succesfully added to cart"%(product.product_id))
+        
+    except AssertionError:
+        return Response('%s  is out of stock'%(product.product_id))
     
-    return Response('only post method is allowed')
-
-
 
 
 @api_view(['POST'])
@@ -110,35 +115,38 @@ def check_out_cart(request):
     """"
     Checkout  orderif it has been approved for then remove from the cart .
     """
-    if request.method == 'POST':
-        user_cart = Cart.objects.filter(user=request.user.id).first()
-        
-        for order in user_cart.orders.all():
-            
-            if order.approval_status == 'approved':
-                user_order_item=OrderItem.objects.filter(order_id=order.order_id)     
-                user_order_item=user_order_item[0]
-               
-                if  int(user_order_item.quantity) < int(user_order_item.product.product_in_stock_count):
-                    product_id=(user_order_item.product.product_id)  
-                    product=Product.objects.filter(product_id=product_id)
-                    product=product[0]
-                    
-                    product.product_in_stock_count -= int(user_order_item.quantity)
-                    product.save()    
-                    user_order_item.delete()    
-                    print("%s checked out succesfully"%(order))
-                else:
-                    print(f"sorry we only have {product.product_in_stock_count} of {product.product_id} available at the moment")
-            else:
-                user_order_item=OrderItem.objects.filter(order_id=order.order_id)
-               
-                print("%s has not yet been approved for purchase"%(order))          
-        return Response("only approved orders were checked out succesfully")
     
-    else:
-        return Response('only post method is allowed')
+    user_cart = Cart.objects.filter(user=request.user.id).first()
 
+    if user_cart is not None:
+
+        if not user_cart.has_object_permission(request, user_cart):
+                raise PermissionDenied()
+        
+        for order_item in user_cart.orders.all():
+            
+            if order_item.is_approved() is True:
+                product=Product.objects.filter(product_id=order_item.product.product_id).first()
+                if  int(order_item.quantity) <  int(product.product_in_stock_count):
+
+                    product.product_in_stock_count -= int(order_item.quantity)
+                    product.save()    
+                    order_item.delete()    
+                    
+                else:
+                    messages.info(request, f"sorry we only have {product.product_in_stock_count} of {product.product_id} available at the moment")
+
+                    # print(f"sorry we only have {product.product_in_stock_count} of {product.product_id} available at the moment")
+            else: 
+                messages.info(request, "%s has not yet been approved for purchase"%(order_item))    
+                # print("%s has not yet been approved for purchase"%(order_item))   
+            user_cart.total_update()
+            user_cart.save()
+        return Response("All approved orders were checked out succesfully")
+    else:
+        return Response('cart does not exist')
+
+ 
 
 
 @api_view(['POST'])
@@ -147,76 +155,55 @@ def approve_order(request, order_id):
     """
     Approve order by the product owner
     """
-    if request.method == 'POST':
-
-        order_qs = OrderItem.objects.filter(order_id=order_id)        
-        
-        if order_qs.exists():
-            order=order_qs[0]
-            product=order.product
+    order = OrderItem.objects.get(order_id=order_id)
+    if order is not None:
+       
+        product=order.product
+        if not product.has_object_permission(request, product):
+            raise PermissionDenied()
            
-
+        if int(product.product_in_stock_count) >= int(order.quantity):
             
-            if int(product.product_in_stock_count) >= int(order.quantity):
-                
-                if order.approval_status != 'approved':
-                    order.approval_status = 'approved'
-                    order.save()
-                    return Response(f"Order {order.order_id} has been approved for purchase ")
-                else:
-                    return Response(f"Order {order.order_id} has already been approved for purchase")
-
+            if order.is_approved() is False:
+                order.approval_status = 'approved'
+                order.save()
+                return Response(f"Order {order.order_id} has been approved for purchase ")
             else:
-                return Response(f"Sorry!!! Order {order.order_id} in stock is just {product.product_in_stock_count}  which isn't up to your order quantity")
+                return Response(f"Order {order.order_id} has already been approved for purchase")
 
         else:
-            return Response(f'OrderItem with id: {order_id} does not exist currently')
-    else:
-        return Response('only post method is allowed')
+            return Response(f"Sorry!!! Order {order.order_id} in stock is just {product.product_in_stock_count}  which isn't up to your order quantity")
 
+    else:
+        return Response(f'OrderItem with id: {order_id} does not exist currently')
 
 
 @api_view(['POST'])
 def decline_order(request, order_id):
-
     """
     Decline order by the product owner
     """
-
-    if request.method == 'POST':
-        order_qs = OrderItem.objects.filter(order_id=order_id)
+    order = OrderItem.objects.filter(order_id=order_id).first() 
+    if order is not None:
+        product=order.product
+        if not product.has_object_permission(request, product):
+            raise PermissionDenied()
         
-        
-        if order_qs.exists():
-          
-            order=order_qs[0]  
-            if order.product.owner.id == request.user.id:
-                
-                if order.approval_status != 'declined':
-                    
-                    order.approval_status = 'declined'
-                    order.save()
-                    user_cart=Cart.objects.filter(user=order.ordered_by_user.id)
-                   
-                    user_cart=user_cart[0]
-                   
-                    user_cart.orders.remove(order)
+        if order.is_declined() is True:
             
-                    user_order_item=OrderItem.objects.filter(order_id=order.order_id)
-                   
-                    user_order_item.delete()    
-              
-                    return Response(f"Order {order.order_id} was   declined for purchase ")                
-
-                else:
-                    return Response('order already declined')
-
-            else:
-                return Response(f"you are not autorized to approve or decline {order.order_id} for purchase ")
+            order.approval_status = 'declined'
+            order.save()
+            user_cart=Cart.objects.filter(user=order.ordered_by_user.id).first()
+            
+            user_cart.orders.remove(order)
+            
+            order.delete()    
+        
+            return Response(f"Order {order.order_id} was   declined for purchase ")                
         else:
-            return Response('order does not exist currently')
+            return Response('order already declined')
     else:
-        return Response('only post method is allowed')
+        return Response('order does not exist currently')
 
 
 
@@ -226,20 +213,19 @@ def quatity_manipulator(request, *args, **kwargs):
     """
     change order quantity
     """
-
-    if request.method == 'POST': 
-        params=kwargs
+    params=kwargs
     
-        order_item=OrderItem.objects.filter(order_id=params['order_id']).first()
-        if order_item.ordered_by_user.id == request.user.id: 
-            order_item.change_order_quantity(params['qty'])
-            order_item.save()
-            return Response('quantity changed successfully')
-        else:
-            return Response("your aren't authorized successfull")
-    else:
-        return Response('only post method is allowed')
+    order_item=OrderItem.objects.filter(order_id=params['order_id']).first()
+    if order_item is not None:
 
+        if not order_item.has_object_permission(request, order_item):
+            raise PermissionDenied()
+
+        order_item.change_order_quantity(params['qty'])
+        order_item.save()
+        return Response('order quantity changed successfully')
+     
+    return Response('order item does not exist')
 
 
 @api_view(['POST'])
@@ -248,11 +234,18 @@ def clear_cart(request):
     """
     clear all cart items at once
     """
+    cart=Cart.objects.filter(user=request.user).first()
+    print(cart)
+    if cart is not None:
 
-    user_orderitem=OrderItem.objects.filter(ordered_by_user=request.user).all()
-    print(user_orderitem)
-    user_orderitem.delete()
-    print(user_orderitem)
+        user_orderitem=OrderItem.objects.filter(ordered_by_user=request.user).all()
+        if user_orderitem is not None:
+            print(user_orderitem)
+            user_orderitem.delete()
+            print(user_orderitem)
+        
+    else:
+        return Response("cart does not exist")
     return Response("cart successfully cleared")
 
 
@@ -263,9 +256,15 @@ def remove_order(request, order_id):
     """
     Remove a particular order but only by the product owner
     """ 
+    user_orderitem=OrderItem.objects.filter(order_id=order_id).first()
+    if user_orderitem is not None: 
 
-    user_orderitem = get_object_or_404(OrderItem, order_id=order_id)         
-    user_orderitem.delete()
+        if not user_orderitem.has_object_permission(request, user_orderitem):
+                raise PermissionDenied()
 
+        else:
+            user_orderitem.delete()
+    else:
+        return Response(f"This order item does not exist")
     return Response(f"order {user_orderitem.order_id} successfully removed")
     

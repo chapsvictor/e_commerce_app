@@ -45,7 +45,27 @@ class OrderItem(models.Model):
         self.quantity = int(qty)
         return self.quantity
 
-    
+
+    def is_approved(self):
+        if self.approval_status == 'approved':
+            return True
+        else:
+            return False
+
+    def approve_order(self):
+        self.approval_status == 'approved'
+        return self.approval_status
+
+    def is_declined(self):
+        if self.approval_status == 'declined':
+            return True
+        else:
+            return False
+
+    def has_object_permission(self, request, obj ):
+
+        if obj.ordered_by_user == request.user:
+            return True
     
     @property
     def get_order_items(self):
@@ -60,11 +80,11 @@ class Cart(models.Model):
     user=models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_cart') 
     cart_checked_out= models.BooleanField(verbose_name=_('checked_out') , default=False)
     
-    orders = models.ManyToManyField(OrderItem, )
+    orders = models.ManyToManyField(OrderItem, blank=True)
     start_date=models.DateTimeField(auto_now_add=True)
     updated_date= models.DateTimeField(auto_now=True)
     check_out_total=models.PositiveIntegerField(default=0)
-    Total_payment_price=models.PositiveIntegerField (_('Cart Total Amount'), default=0)
+    total_payment_price=models.PositiveIntegerField (_('Cart Total Amount'), default=0)
 
 
     class Meta:
@@ -77,7 +97,19 @@ class Cart(models.Model):
 
 
     def save(self, *args, **kwargs):
-        self.Total_payment_price=0
-        for order in self.orders.all():
-            self.Total_payment_price += float(order.payment_price)
+        
         super().save(*args, **kwargs)
+       
+
+    def total_update(self):
+        self.total_payment_price = 0
+        for order in self.orders.all():
+            self.total_payment_price += order.payment_price
+        # super().save()
+        return self.total_payment_price
+
+
+    def has_object_permission(self, request, obj ):
+
+        if obj.user == request.user:
+            return True

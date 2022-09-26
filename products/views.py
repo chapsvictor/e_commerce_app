@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from .models import Category, Product
 from .serializers import CategorySerializer, ProductsSerializer
+from rest_framework.permissions import BasePermission, SAFE_METHODS 
 
 
 User=get_user_model()
@@ -31,6 +32,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return Response('only admin can delete Category')
 
 
+class ProductPermission(BasePermission):
+
+    message = 'You are only allowed to approve an order for your personal product' 
+
+    def has_object_permission(self, request, view, obj):
+
+        if request.methods in SAFE_METHODS:
+            return True 
+        
+        return obj.product.owner == request.user  
 
 class ProductViewSet(viewsets.ModelViewSet):
 

@@ -13,7 +13,10 @@ class OrderItemSerializer(serializers.ModelSerializer):
     ordered_by_user = UserDetailSerializer(read_only=True)
     class Meta:
         model=OrderItem
-        fields = ['order_id', 'product','approval_status', 'ordered_status', 'quantity', 'ordered_by_user']
+        fields = ['id','order_id', 'product','approval_status', 'ordered_status', 'quantity', 'ordered_by_user']
+
+        read_only_fields = ('approval_status', 'ordered_status','ordered_by_user','product' )
+
         depth = 1
 
 
@@ -27,5 +30,7 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model=Cart
-        fields = ['user', 'cart_checked_out', 'orders', 'start_date', 'updated_date', 'check_out_total']
+        fields = ['id', 'user', 'cart_checked_out', 'orders', 'start_date', 'updated_date', 'check_out_total']
+
+        read_only_fields = ('cart_checked_out', 'check_out_total','user' )
         depth = 1
