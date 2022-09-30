@@ -1,17 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (add_to_cart, 
-                    approve_order,
-                    CartDetail, 
-                    check_out_cart,
-                    clear_cart,
-                    decline_order, 
-                    OrderItemDetail,
-                    quatity_manipulator, 
-                    remove_order, 
-)
-
+from .views import *
 
 app_name= 'customer'
 

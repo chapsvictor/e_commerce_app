@@ -1,9 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from django.conf import settings
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from e_commerce.generator import id_generator
-from products.models import Product
-from products.models import Product
+from products.models import *
 
 
 
@@ -17,7 +18,7 @@ class OrderItem(models.Model):
 
     ordered_by_user=models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='order_user', blank=True, null=True)  
     product = models.ForeignKey(Product, related_name='product_item', on_delete = models.CASCADE)
-    order_id=models.CharField(_('order id'), max_length=20, blank=True)
+    order_id=models.CharField(_('order id'), max_length=20, blank=True, null=True)
     approval_status = models.CharField(max_length=100, choices=STATUS, default='pending')
     quantity = models.PositiveIntegerField(default=1)
     ordered_status = models.BooleanField(_('status'), default=False, max_length=100)
@@ -29,15 +30,14 @@ class OrderItem(models.Model):
     def __str__(self):
         return '%s  of  %s id: %s'%(self.quantity, self.product.name, self.order_id)
     
-    
-    
+ 
     def save(self, *args, **kwargs):
-        self.total_quantity_price = float(self.quantity) * float(self.product.price) 
-        self.payment_price = float(self.total_quantity_price) - float(self.coupon_discount_amount)
-        if self.order_id:
-            super().save(*args, **kwargs)
-        else:
-            self.order_id = 'ORD%s'%(id_generator(instance=self))
+        # self.total_quantity_price = float(self.quantity) * float(self.product.price) 
+        # self.payment_price = float(self.total_quantity_price) - float(self.coupon_discount_amount)
+        # if self.order_id:
+        #     super().save(*args, **kwargs)
+        # else:
+        #     self.order_id = 'ORD%s'%(id_generator(instance=self))
             super().save(*args, **kwargs)
 
     
@@ -70,6 +70,19 @@ class OrderItem(models.Model):
     @property
     def get_order_items(self):
         return ", ".join([item.product.name for item in self.cart_items.all()])
+
+
+
+
+@receiver(pre_save, sender=OrderItem)
+def order_item_manipulator(sender, **kwargs):
+    order_items = kwargs['instance']
+    print(order_items)
+    order_items.total_quantity_price = float(order_items.quantity) * float(order_items.product.price) 
+    order_items.payment_price = float(order_items.total_quantity_price) - float(order_items.coupon_discount_amount)
+   
+    if order_items.order_id is None:
+        order_items.order_id = 'ORD%s'%(id_generator(instance=order_items))
 
     
 class Cart(models.Model):    
@@ -113,3 +126,4 @@ class Cart(models.Model):
 
         if obj.user == request.user:
             return True
+

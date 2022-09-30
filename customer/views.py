@@ -1,5 +1,5 @@
 from django.contrib import messages
-from customer.models import OrderItem, Cart
+from customer.models import *
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from products.models import Product
 from .models import OrderItem
-from .serializers import CartSerializer, OrderItemSerializer
+from .serializers import *
 from rest_framework.permissions import SAFE_METHODS, BasePermission,IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 

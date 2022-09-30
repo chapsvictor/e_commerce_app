@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets
 from rest_framework.response import Response
-from .models import Category, Product
-from .serializers import CategorySerializer, ProductsSerializer
+from .models import *
+from .serializers import *
 from rest_framework.permissions import BasePermission, SAFE_METHODS 
 
 
@@ -43,12 +43,18 @@ class ProductPermission(BasePermission):
         
         return obj.product.owner == request.user  
 
+
 class ProductViewSet(viewsets.ModelViewSet):
 
     serializer_class=ProductsSerializer
 
-    def get_queryset(self):
-        qs= Product.objects.all()
+    def get_queryset(self, *args, **kwargs):
+        param=kwargs
+        category=self.request.query_params.get('category')
+        if category:
+            qs=Product.objects.filter(category__name=category)       
+        else:
+            qs= Product.objects.all()
         return qs
 
 
