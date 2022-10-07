@@ -18,9 +18,9 @@ class  Category(models.Model):
 
 
     def save(self,*args, **kwargs):
-            # self.slug = slugify(self.name)
-            # self.name= self.name.lower()
-            super().save(*args, **kwargs)
+        if self.slug is None:
+            self.category.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
    
@@ -29,19 +29,18 @@ class  Category(models.Model):
         return '%s category'%(self.name)
 
 
-    @staticmethod
-    def get_all_categories():
-        return Category.objects.all()
+class Colour(models.Model):
+
+    name=models.CharField(max_length=200, blank=True, unique=True)
 
 
-@receiver(pre_save, sender=Category)
-def slug_creator(sender, **kwargs):
-    category=kwargs['instance']
-    slug = category.slug
-    category.name = category.name.lower()
-    name=category.name
-    if slug is None:
-        category.slug = slugify(name)
+    def save(self, *args, **kwargs):
+        self.name=self.name.lower()
+        super().save(*args, **kwargs)
+
+
+    def __str__(self):
+        return 'colour %s '%(self.name)
 
 
 class Product(models.Model):
@@ -54,67 +53,35 @@ class Product(models.Model):
     price=models.IntegerField()
     is_instock = models.BooleanField(_('in stock?'), default=True)
     product_in_stock_count=models.IntegerField(_('stock count'),default=0)
-    category=models.ForeignKey(Category, related_name='category', on_delete=models.CASCADE, null=False)
+    category=models.ForeignKey(Category, related_name='category', on_delete=models.CASCADE, blank=False, null=False, default='')
     image = models.ImageField(upload_to='media/products/', blank=True , null=True)
     date_created=models.DateField(auto_now_add=True)
     product_id=models.CharField(max_length=50, blank=True, null=True)
+    colour=models.ForeignKey(Colour, related_name='colour', on_delete=models.CASCADE, default='')
     owner=models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE, blank=True, null=True)
     
+
+
+    def save(self,*args, **kwargs):
+        if self.product_id is None:
+            self.product_id = '%s_%s'%(self.name, id_generator(instance = self))
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return '%s  id: %s'%(self.name, self.product_id)
           
 
 
-    def save(self,*args, **kwargs):
-        super().save(*args, **kwargs)
-
-
-    # @staticmethod
-    # def get_products_by_id(product_id):
-    #     return Product.objects.filter(id=product_id)
-
-    # @staticmethod
-    # def get_all_products():
-    #     return Product.objects.all()
-
-    # @staticmethod
-    # def get_products_by_category_id(category_id):
-    #     if category_id:
-    #         return Product.objects.filter(category=category_id)
-    #     else:
-    #         return Product.get_all_products()
-    
-    # @staticmethod
-    # def get_products_by_category_name(category_name):
-    #     if category_name:
-    #         return Product.objects.filter(category=category_name)
-    #     else:
-    #         return Product.get_all_products()
-
-
-    def get_image_url(self):
-            if self.image:
-                return self.image.url
-            else:
-                return ''
-
     def product_still_instock(self):
 
         """
         Check if product is still in stock
         """
-
-        if self.product_in_stock_count >=1:
-            return True
-        else:
-            return False
+        return self.product_in_stock_count >=1
 
 
     def has_object_permission(self, request, obj ):
-
-        if obj.owner == request.user:
-            return True
+            return obj.owner == request.user
   
 
     class Meta:
@@ -123,12 +90,28 @@ class Product(models.Model):
         ordering=['-date_created']
 
 
-@receiver(pre_save, sender=Product)
-def product_id_setter(sender, **kwargs):
-    product = kwargs['instance']
-    product_id = product.product_id
-    name = product.name
 
-    if product_id is None:
-        product.product_id = '%s_%s'%(name, id_generator(instance = product))
+
+
+
+
+# @receiver(pre_save, sender=Category)
+# def slug_creator(sender, **kwargs):
+#     category=kwargs['instance']
+#     slug = category.slug
+#     category.name = category.name.lower()
+#     name=category.name
+#     if slug is None:
+#         category.slug = slugify(name)
+
+
+
+# @receiver(pre_save, sender=Product)
+# def product_id_setter(sender, **kwargs):
+#     product = kwargs['instance']
+#     product_id = product.product_id
+#     name = product.name
+
+#     if product_id is None:
+#         product.product_id = '%s_%s'%(name, id_generator(instance = product))
         

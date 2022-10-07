@@ -3,12 +3,15 @@ from django.utils.translation import gettext as _
 from django.conf import settings
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from coupon.models import Coupon
 from e_commerce.generator import id_generator
 from products.models import *
 
 
 
 class OrderItem(models.Model):
+    
+    # models.TextChoices for choices
 
     """
     Order model for products that are being ordered at a particular time
@@ -23,6 +26,8 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     ordered_status = models.BooleanField(_('status'), default=False, max_length=100)
     total_quantity_price = models.PositiveIntegerField (_('Order Cost'), default=0)
+    # add the coupon itself so we know which coupon was used
+    # coupons=models.ManyToManyField(Coupon, related_name='coupons_used', blank=True)
     coupon_discount_amount = models.PositiveIntegerField (_('Coupon Discount  Amount '), default=0)
     payment_price = models.PositiveIntegerField (_('Order Total Amount'), default=0)
 
@@ -30,15 +35,6 @@ class OrderItem(models.Model):
     def __str__(self):
         return '%s  of  %s id: %s'%(self.quantity, self.product.name, self.order_id)
     
- 
-    def save(self, *args, **kwargs):
-        # self.total_quantity_price = float(self.quantity) * float(self.product.price) 
-        # self.payment_price = float(self.total_quantity_price) - float(self.coupon_discount_amount)
-        # if self.order_id:
-        #     super().save(*args, **kwargs)
-        # else:
-        #     self.order_id = 'ORD%s'%(id_generator(instance=self))
-            super().save(*args, **kwargs)
 
     
     def change_order_quantity(self, qty):
@@ -109,8 +105,7 @@ class Cart(models.Model):
         return "%s's cart"%(self.user.username)
 
 
-    def save(self, *args, **kwargs):
-        
+    def save(self, *args, **kwargs): 
         super().save(*args, **kwargs)
        
 

@@ -8,12 +8,19 @@ class CategorySerializer(serializers.ModelSerializer):
         fields=['id', 'name', 'slug']
         model = Category
        
-    
-class ProductsSerializer(serializers.ModelSerializer):
-    category=CategorySerializer()
+
+class ColourSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields=['id', 'name', 'description', 'price', 'category','product_in_stock_count', 'image' ]
+        fields=['id', 'name']
+        model = Colour
+       
+    
+class ProductsSerializer(serializers.ModelSerializer):
+    # category=CategorySerializer()
+
+    class Meta:
+        fields=['id', 'name', 'description', 'price', 'category','product_in_stock_count', 'image', 'colour']
         model = Product
 
         depth = 1

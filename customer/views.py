@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from products.models import Product
 from .models import OrderItem
 from .serializers import *
-from rest_framework.permissions import SAFE_METHODS, BasePermission,IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.exceptions import PermissionDenied
 
 
@@ -126,7 +126,7 @@ def check_out_cart(request):
         for order_item in user_cart.orders.all():
             
             if order_item.is_approved() is True:
-                product=Product.objects.filter(product_id=order_item.product.product_id).first()
+                product=order_item.product
                 if  int(order_item.quantity) <  int(product.product_in_stock_count):
 
                     product.product_in_stock_count -= int(order_item.quantity)
@@ -134,12 +134,13 @@ def check_out_cart(request):
                     order_item.delete()    
                     
                 else:
-                    messages.info(request, f"sorry we only have {product.product_in_stock_count} of {product.product_id} available at the moment")
-
-                    # print(f"sorry we only have {product.product_in_stock_count} of {product.product_id} available at the moment")
-            else: 
-                messages.info(request, "%s has not yet been approved for purchase"%(order_item))    
-                # print("%s has not yet been approved for purchase"%(order_item))   
+                    # for UI
+                    # messages.info(request, f"sorry we only have {product.product_in_stock_count} of {product.product_id} available at the moment")
+                    pass
+            else:
+                # for UI 
+                # messages.info(request, "%s has not yet been approved for purchase"%(order_item))    
+                pass   
             user_cart.total_update()
             user_cart.save()
         return Response("All approved orders were checked out succesfully")
@@ -170,7 +171,6 @@ def approve_order(request, order_id):
                 return Response(f"Order {order.order_id} has been approved for purchase ")
             else:
                 return Response(f"Order {order.order_id} has already been approved for purchase")
-
         else:
             return Response(f"Sorry!!! Order {order.order_id} in stock is just {product.product_in_stock_count}  which isn't up to your order quantity")
 
@@ -235,15 +235,11 @@ def clear_cart(request):
     clear all cart items at once
     """
     cart=Cart.objects.filter(user=request.user).first()
-    print(cart)
     if cart is not None:
 
         user_orderitem=OrderItem.objects.filter(ordered_by_user=request.user).all()
         if user_orderitem is not None:
-            print(user_orderitem)
-            user_orderitem.delete()
-            print(user_orderitem)
-        
+            user_orderitem.delete()        
     else:
         return Response("cart does not exist")
     return Response("cart successfully cleared")

@@ -1,50 +1,53 @@
 from userapp.models import User
-import unittest
+from django.test import TestCase
 
 
-
-class UserTestCase(unittest.TestCase):
+class UserTestCase(TestCase):
 
     """
     Test user creation
     """
-
-    def test_create_user(self):
+    def setUp(self):
         email = 'testemail@yahoo.com'
-        username = 'testemail'
+        username = 'testusername'
         first_name = 'testfirstname'
         address="testaddress"
         contact="0903249609"
         password='12345'
+        User.objects._create_user(email=email, 
+                                                username=username, 
+                                                first_name=first_name, 
+                                                address=address, 
+                                                contact=contact, 
+                                                password=password, 
+                                                is_active=True, 
+                                                is_staff=False, 
+                                                is_superuser=False
+        )
 
 
-        test_user = User.objects.create(email=email, username=username, first_name=first_name, address=address, contact=contact, password=password)
 
-        self.assertTrue(test_user)
+    def test_create_user(self):
+        test_user= User.objects.get(username= 'testusername')
+
         self.assertEquals(test_user.first_name, 'testfirstname')
-        self.assertEquals(test_user.password, '12345')
         self.assertEquals(test_user.email, 'testemail@yahoo.com')
-        self.assertEquals(test_user.first_name, 'testfirstname')
+        self.assertEquals(test_user.username, 'testusername')
         self.assertEquals(test_user.address, "testaddress")
         self.assertEquals(test_user.contact, "0903249609")
+        self.assertNotEqual(test_user.password, '12345')
         self.assertTrue(test_user.is_active)
         self.assertFalse(test_user.is_staff)
         self.assertFalse(test_user.is_superuser)
 
 
-        test_user.delete()
-        
-    
-
-
-class SuperUserTestCase(unittest.TestCase):
+class SuperUserTestCase(TestCase):
 
     """
     Test super_user creation
     """
 
-                
-    def test_create_superuser(self):
+    def setUp(self):
         email = 'supertestemail@yahoo.com'
         username = 'supertestemail'
         first_name = 'supertestfirstname'
@@ -52,10 +55,20 @@ class SuperUserTestCase(unittest.TestCase):
         contact="0903249609"
         password='12345'
 
-        test_super_user=User.objects.create_superuser(email=email, username=username, first_name=first_name, address=address, contact=contact, password = password)
+        User.objects.create_superuser(email=email, 
+                                    username=username, 
+                                    first_name=first_name, 
+                                    address=address, 
+                                    contact=contact, 
+                                    password = password
+        )
 
-    
-        self.assertTrue(test_super_user)
+
+    def test_create_superuser(self):
+
+        test_super_user=User.objects.get(email='supertestemail@yahoo.com')
+        
+        
         self.assertEquals(test_super_user.first_name,'supertestfirstname' )
         self.assertEquals(test_super_user.email, 'supertestemail@yahoo.com')
         self.assertEquals(test_super_user.first_name, 'supertestfirstname')
@@ -64,10 +77,3 @@ class SuperUserTestCase(unittest.TestCase):
         self.assertTrue(test_super_user.is_active)
         self.assertTrue(test_super_user.is_staff)
         self.assertTrue(test_super_user.is_superuser)
-
-        test_super_user.delete()
-
-
-
-if __name__ == '__main__':
-    unittest.main()

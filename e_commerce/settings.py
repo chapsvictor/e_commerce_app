@@ -102,10 +102,20 @@ REST_FRAMEWORK = {
        
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+
+    
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly', ),
-    # 'USER_DETAILS_SERIALIZER': 'userapp.serializers.UserDetailsSerializer',
+
+    'NON_FIELD_ERRORS_KEY': 'ERROR'
+    
    
+}
+
+
+
+REST_AUTH_REGISTER_SERIALIZERS = { 
+    'USER_DETAILS_SERIALIZER': 'userapp.serializers.UserDetailsSerializer',
 }
 
 

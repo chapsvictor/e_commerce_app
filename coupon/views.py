@@ -41,7 +41,6 @@ def use_coupon(request, coupon_id, order_id):
             cart_user=Cart.objects.get(user=request.user)
 
             discount=discount_calculator(coupon_id)
-            print(discount)
 
             if coupon.coupon_type == 'category':
                 if coupon.coupon_category.id == order_item.product.category.id:
@@ -51,7 +50,9 @@ def use_coupon(request, coupon_id, order_id):
                         
                         
                         order_item.save()
+                        
                         cart_user.save()
+
                         coupon.delete()
                         return Response(f"You have successfully used this category coupoun {coupon_id}")
                     else:
