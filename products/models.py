@@ -88,30 +88,3 @@ class Product(models.Model):
         verbose_name = 'product'
         verbose_name_plural = 'products'
         ordering=['-date_created']
-
-
-
-
-
-
-
-# @receiver(pre_save, sender=Category)
-# def slug_creator(sender, **kwargs):
-#     category=kwargs['instance']
-#     slug = category.slug
-#     category.name = category.name.lower()
-#     name=category.name
-#     if slug is None:
-#         category.slug = slugify(name)
-
-
-
-# @receiver(pre_save, sender=Product)
-# def product_id_setter(sender, **kwargs):
-#     product = kwargs['instance']
-#     product_id = product.product_id
-#     name = product.name
-
-#     if product_id is None:
-#         product.product_id = '%s_%s'%(name, id_generator(instance = product))
-        

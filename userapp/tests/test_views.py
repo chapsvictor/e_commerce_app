@@ -49,10 +49,12 @@ class RegistrationViewTest(APITestCase):
                 'password2':'victor1996',
                 'address':'testaddress',
                 'contact':'09032849609'
-            }
+                }
+
         response = self.client.post(register_url, test_user, format='json')
+        print(response.data)
 
         created_user = User.objects.get(username=test_user['username'])
         self.assertEquals(status.HTTP_201_CREATED, response.status_code)
         self.assertEquals(response.data['email'], created_user.email)
-    
+        

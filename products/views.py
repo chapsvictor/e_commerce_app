@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
 from .models import *
@@ -14,9 +15,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
 
-    # def get_queryset(self):
-    #     qs= Category.objects.all()
-    #     return qs
+    
 
     def retrieve(self, request, *args, **kwargs):
         param=kwargs
@@ -53,21 +52,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self, *args, **kwargs):
         category=self.request.query_params.get('category')
         colour=self.request.query_params.get('colour')
-        print(colour)
-        print(category)
-
         if category and colour:
-            print('category and colour')
             qs=Product.objects.filter(category__name=category, colour__name=colour)
-        elif category:
-            print('only category')
+        elif category:            
             qs=Product.objects.filter(category__name=category)
           
         else:
             qs= Product.objects.all()
-
         return qs
-
 
     def retrieve(self, request, *args, **kwargs):
         param=kwargs
@@ -86,37 +78,19 @@ class ProductViewSet(viewsets.ModelViewSet):
                     image=request.data['image'],
                     owner=User.objects.get(id=request.user.id),
                     colour=Colour.objects.get(name=request.data['colour'])
-        )
-    
-        
-        # qs = Product(name=request.data['name'],
-        #             description=request.data['description'],
-        #             price=request.data['price'],
-        #             product_in_stock_count=request.data['product_in_stock_count'],
-                    
-        #             owner=User.objects.get(id=request.user.id)
-        # )
-        
-        # try:
-        #     qs.image=request.data['image']
-        # except Exception as e:
-        #     pass
-
-        # qs.save()
-        # category=Category.objects.get(name=request.data['category'])
-        
-        # qs.category.add(category)
-        # qs.save()      
-
+        )   
+   
         serializer = ProductsSerializer(data=request.data, many=True)
-        
+                    
         if serializer.is_valid():
             serializer.save()
-    
+            
+           
             return Response(serializer.data)
             
         return Response(serializer.errors)
 
+   
 
     def destroy(self, request, *args, **kwargs):
 

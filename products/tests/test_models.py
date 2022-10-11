@@ -1,5 +1,4 @@
 from django.utils.text import slugify
-import unittest
 from django.test import TestCase
 from userapp.models import User
 from ..models import *
@@ -78,7 +77,4 @@ class TestProduct(TestCase):
         self.assertEquals(product.owner.email, "testemail@yahoo.com")
         self.assertEquals(product.product_in_stock_count, 4)
         self.assertEquals(product.colour, colour)
-
-
-
-   
+        
